@@ -14,6 +14,12 @@ Gameboy emulator written in Rust using imgui-rs for GUI
     cd rustboy-gui
     cargo run --release -- --rom /path/to/rom
 ```
+# Features 
+* Save states
+  
+## TODO 
+* Audio 
+* GBC 
 
 ## Tests
 
