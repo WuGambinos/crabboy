@@ -11,9 +11,9 @@ use sdl2::{
 };
 use sdl_support::SdlPlatform;
 
-use env_logger::*;
 use crabboy::gameboy::*;
 use crabboy::interconnect::joypad::Key;
+use env_logger::*;
 
 // Create a new glow context.
 fn glow_context(window: &Window) -> glow::Context {
@@ -66,7 +66,7 @@ fn main() {
     /* enable vsync to cap framerate */
     //window.subsystem().gl_set_swap_interval(1).unwrap();
 
-    let gl = glow_context(&window);
+    let gl: glow::Context = glow_context(&window);
 
     let mut imgui = Context::create();
 
@@ -79,7 +79,7 @@ fn main() {
         .add_font(&[imgui::FontSource::DefaultFontData { config: None }]);
 
     let mut platform = SdlPlatform::init(&mut imgui);
-    let mut renderer = AutoRenderer::initialize(gl, &mut imgui).unwrap();
+    let mut renderer = AutoRenderer::initialize(gl, &mut imgui).expect("failed to create renderer");
 
     // start main loop
     let mut event_pump = sdl.event_pump().unwrap();

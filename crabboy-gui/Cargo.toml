@@ -7,14 +7,14 @@ edition = "2021"
 
 [dependencies]
 crabboy-gb= {path = "../crabboy-gb"}
-anyhow = "1.0.72"
-log = "0.4.17"
+anyhow = "1.0.102"
+log = "0.4.29"
 pretty_env_logger = "0.4.0"
-env_logger = "0.10.0"
+env_logger = "0.11.10"
 imgui = "0.12.0"
-rfd = {version = "0.14.1", default-features=false, features=["gtk3"]}
+rfd = {version = "0.17.2", default-features=false, features=["gtk3"]}
 glow = "0.13.1"
 imgui-glow-renderer = "0.12.0"
 
 [dependencies.sdl2]
-version = "0.37.0"
+version = "0.38.0"
