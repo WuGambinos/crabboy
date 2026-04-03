@@ -20,7 +20,7 @@ use yazi::*;
 pub struct GameBoy {
     pub cpu: Cpu,
     pub interconnect: Interconnect,
-    pub booted : bool,
+    pub booted: bool,
 }
 
 impl GameBoy {
@@ -32,11 +32,15 @@ impl GameBoy {
         }
     }
 
-    pub fn save_state(&self, name: &str) {
-        println!("NAME: {}", name);
+    pub fn get_state(&self) -> Vec<u8> {
         let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
         let compressed = compress(&encoded, Format::Zlib, CompressionLevel::Default).unwrap();
-        let _ = std::fs::write(name, &compressed).unwrap();
+
+        /*
+        fd.set_file_name("save_file.sav").save_file();
+        let _ = std::fs::write(format!("{}.sav", name), &compressed).unwrap();
+        */
+        return compressed;
     }
 
     pub fn load_state(&mut self, compressed_state: Vec<u8>) {
@@ -66,7 +70,13 @@ impl GameBoy {
         let cart_type: CartridgeType = u8_to_cart_type(cart_type_value);
 
         self.interconnect.cartridge = Cartridge::new(&game_rom, &ram, &cart_type);
-        let file_name: Vec<&str> = game_rom_path.file_name().unwrap().to_str().unwrap().split('.').collect();
+        let file_name: Vec<&str> = game_rom_path
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .split('.')
+            .collect();
         self.interconnect.cartridge.title = file_name[0].to_string();
         println!("FILE NAME: {}", file_name[0]);
         println!("CART TYPE: {:?}", cart_type);

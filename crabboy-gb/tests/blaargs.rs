@@ -31,7 +31,7 @@ fn all_cpu_blaargs() {
 }
 
 fn run_test(rom_path: &str) {
-    let mut emulator = Command::new("target/release/rustboy")
+    let mut emulator = Command::new("target/release/crabboy")
         .arg("--rom")
         .arg(rom_path)
         .arg("--headless")

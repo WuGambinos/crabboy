@@ -1,41 +1,53 @@
-import init,  {WebGameBoy}  from './rustboy_wasm.js';
+import init,  {WebGameBoy}  from './crabboy_wasm.js';
 
-// FPS COUNTER
-const fps = new class {
-    constructor()  {
-        this.fps = document.getElementById("fps");
-        this.frames = [];
-        this.lastFrameTimeStamp = performance.now()
+const MAX_FPS = 60;
+
+
+let lastFrameTime = performance.now();
+let frameCount = 0;
+let fps = 0;
+
+function updateFrameCounter() {
+    const currentTime = performance.now();
+    frameCount++;
+
+    if (currentTime - lastFrameTime >= 1000) {
+        fps = frameCount;
+        frameCount = 0;
+        lastFrameTime = currentTime;
+        let f = document.getElementById("fps");
+        f.textContent = `FPS: ${fps}`
     }
+}
 
-    render() {
-        const now = performance.now();
-        const delta = now - this.lastFrameTimeStamp;
-        this.lastFrameTimeStamp = now;
-        const fps = 1 / delta * 1000;
+let controllerIndex = null;
+window.addEventListener("gamepadconnected", (e) => {
+    const gamepad = e.gamepad;
+    controllerIndex = gamepad.index;
+    console.log("CONNECTED " + gamepad);
+});
 
-        this.frames.push(fps);
-        if (this.frames.length > 100){
-            this.frames.shift();
+window.addEventListener("gamepaddisconnected", (e) => {
+    controllerIndex = null;
+    console.log("DISCONNECTED " + gamepad);
+});
+
+
+let button_pressed = null;
+let button_released = null;
+function handleButtons(gb, buttons) {
+    for(let i = 0; i < buttons.length; i++) {
+        const button = buttons[i];
+
+        if (button.pressed) {
+            console.log("BUTTON " + i);
+            button_pressed = i;
+                gb.on_button_down(i);
         }
-
-        let min = Infinity;
-        let max = -Infinity;
-        let sum = 0;
-
-        for (let i = 0; i < this.frames.length; i++) {
-            sum += this.frames[i];
-            min  = Math.min(this.frames[i], min);
-            max  = Math.max(this.frames[i], max);
+        else {
+            button_released = i;
+            gb.on_button_up(i);
         }
-        let mean = sum / this.frames.length;
-
-           // Render the statistics.
-        this.fps.textContent = ` Frames per Second:
-            latest = ${Math.round(fps)}
-            avg of last 100 = ${Math.round(mean)}
-            min of last 100 = ${Math.round(min)}
-            max of last 100 = ${Math.round(max)}`.trim();
     }
 }
 
@@ -63,7 +75,6 @@ async function startWasm() {
         || e.key === "x") {
             e.preventDefault();
         }
-        console.log("YOU PRESED: " + e.key);
         keyPressed = e.key;
     }, false);
 
@@ -79,6 +90,7 @@ async function startWasm() {
         }
         keyReleased = e.key;
     });
+
 
     async function loadFile() {
         const inputElement = document.getElementById('fileInput');
@@ -100,9 +112,15 @@ async function startWasm() {
         game_loop();
 
         function game_loop() {
-            fps.render();
+            updateFrameCounter();
             gb.run();
             gb.draw();
+
+            if(controllerIndex !== null) {
+                const gamepad = navigator.getGamepads()[controllerIndex];
+                const press = handleButtons(gb, gamepad.buttons);
+            }
+
             if (keyPressed != null) {
                 gb.on_key_down(keyPressed);
                 keyPressed = null;
@@ -118,7 +136,6 @@ async function startWasm() {
                 gb.boot(contents);
                 resetPressed = false;
                 context.clearRect(0, 0, canvas.width, canvas.height);
-
             }
 
             requestAnimationFrame(game_loop);

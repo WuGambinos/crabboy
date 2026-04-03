@@ -1,13 +1,14 @@
 use crate::constants::{
-    GB_POS, GB_SCREEN_HEIGHT, GB_SCREEN_SIZE, GB_SCREEN_WIDTH, GB_SCREEN_X, GB_SCREEN_Y, SCALE,
-    TILE_SCALE, TILE_SCREEN_HEIGHT, TILE_SCREEN_WIDTH, WINDOW_HEIGHT, WINDOW_WIDTH,
+    DEBUG_WINDOW_HEIGHT, DEBUG_WINDOW_WIDTH, DEBUG_WINDOW_X, DEBUG_WINDOW_Y, DISPLAY_INFO_HEIGHT,
+    DISPLAY_INFO_WIDTH, DISPLAY_INFO_X, DISPLAY_INFO_Y, GB_POS, GB_SCREEN_SIZE, SCALE, TILE_SCALE,
+    TILE_SCREEN_HEIGHT, TILE_SCREEN_WIDTH, TILE_SCREEN_X, TILE_SCREEN_Y,
 };
 
 use imgui::{Condition, DrawListMut, ImColor32, Ui};
 use rfd::FileDialog;
-use rustboy::constants::{TILE_COLORS, X_RESOLUTION, Y_RESOLUTION};
-use rustboy::gameboy::GameBoy;
-use rustboy::interconnect::Interconnect;
+use crabboy::constants::{TILE_COLORS, X_RESOLUTION, Y_RESOLUTION};
+use crabboy::gameboy::GameBoy;
+use crabboy::interconnect::Interconnect;
 
 pub fn menu(ui: &mut Ui, picker: &FileDialog, gameboy: &mut GameBoy) {
     if let Some(main) = ui.begin_main_menu_bar() {
@@ -16,11 +17,18 @@ pub fn menu(ui: &mut Ui, picker: &FileDialog, gameboy: &mut GameBoy) {
             let select_rom = ui.menu_item("Open Rom");
             let save = ui.menu_item("Save State");
             let load = ui.menu_item("Load State");
+            let exit = ui.menu_item("Exit");
+
             if select_rom {
                 if !gameboy.booted {
-                    let pick = picker.clone().pick_files().unwrap();
-                    let rom_path = pick[0].clone().into_os_string().into_string().unwrap();
-                    gameboy.boot(&rom_path, true).unwrap();
+                    let pick = picker.clone().pick_files();
+                    match pick {
+                        Some(v) => {
+                            let rom_path = v[0].clone().into_os_string().into_string().unwrap();
+                            gameboy.boot(&rom_path, true).unwrap();
+                        }
+                        None => println!("NO ROM SELECTED"),
+                    }
                 }
             }
 
@@ -33,7 +41,22 @@ pub fn menu(ui: &mut Ui, picker: &FileDialog, gameboy: &mut GameBoy) {
             }
 
             if save {
-                gameboy.save_state(&gameboy.interconnect.cartridge.title);
+                let state = gameboy.get_state();
+                let path_buf = picker.clone().set_file_name("save_file.sav").save_file();
+                match path_buf {
+                    Some(buf) => {
+                        let path_string = buf.into_os_string().into_string();
+                        match path_string {
+                            Ok(s) => std::fs::write(format!("{}", s), &state).unwrap(),
+                            Err(e) => println!("STRING ERROR: {:?}", e),
+                        }
+                    }
+                    None => println!("NO SAVE FILE WAS MADE"),
+                }
+            }
+
+            if exit {
+                std::process::exit(0);
             }
 
             f_menu.end();
@@ -59,9 +82,12 @@ pub fn memory_viewer(ui: &mut Ui, gameboy: &GameBoy) {
 
 pub fn debug_window(ui: &mut Ui, gameboy: &GameBoy) {
     ui.window("Debug Window")
-        .position([200.0, 500.0], Condition::FirstUseEver)
-        .size([150.0, 200.0], Condition::FirstUseEver)
-        .collapsed(true, Condition::FirstUseEver)
+        .position([DEBUG_WINDOW_X, DEBUG_WINDOW_Y], Condition::FirstUseEver)
+        .size(
+            [DEBUG_WINDOW_WIDTH, DEBUG_WINDOW_HEIGHT],
+            Condition::FirstUseEver,
+        )
+        .collapsed(false, Condition::FirstUseEver)
         .build(|| {
             let pc = format!("PC: {:#X}", gameboy.cpu.pc);
             let sp = format!("SP: {:#X}", gameboy.cpu.sp);
@@ -91,9 +117,12 @@ pub fn debug_window(ui: &mut Ui, gameboy: &GameBoy) {
 
 pub fn display_info(ui: &mut Ui, gameboy: &GameBoy) {
     ui.window("Info")
-        .size([200.0, 400.0], Condition::FirstUseEver)
-        .position([400.0, 600.0], Condition::FirstUseEver)
-        .collapsed(true, Condition::FirstUseEver)
+        .size(
+            [DISPLAY_INFO_WIDTH, DISPLAY_INFO_HEIGHT],
+            Condition::FirstUseEver,
+        )
+        .position([DISPLAY_INFO_X, DISPLAY_INFO_Y], Condition::FirstUseEver)
+        .collapsed(false, Condition::FirstUseEver)
         .build(|| {
             let title = format!("TITLE: {}", &gameboy.interconnect.cartridge.title);
             let cart_type = format!(
@@ -149,8 +178,8 @@ pub fn draw_tiles(ui: &mut Ui, interconnect: &Interconnect) {
             [TILE_SCREEN_WIDTH as f32, TILE_SCREEN_HEIGHT as f32],
             Condition::FirstUseEver,
         )
-        .position([600.0, 600.0], Condition::FirstUseEver)
-        .collapsed(true, Condition::FirstUseEver)
+        .position([TILE_SCREEN_X, TILE_SCREEN_Y], Condition::FirstUseEver)
+        .collapsed(false, Condition::FirstUseEver)
         .build(|| {
             let draw_list = ui.get_window_draw_list();
             let origin: [f32; 2] = ui.cursor_screen_pos();

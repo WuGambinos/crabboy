@@ -1,5 +1,5 @@
 [package]
-name = "rustboy-gb"
+name = "crabboy-gb"
 version = "0.1.0"
 edition = "2021"
 
@@ -20,5 +20,5 @@ serde-big-array = "0.5.1"
 yazi = "0.2.0"
 
 [lib]
-name = "rustboy"
+name = "crabboy"
 path = "src/lib.rs"
