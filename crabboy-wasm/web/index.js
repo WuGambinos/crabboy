@@ -1,4 +1,4 @@
-import init,  {WebGameBoy}  from './rustboy_wasm.js';
+import init,  {WebGameBoy}  from './crabboy_wasm.js';
 
 const MAX_FPS = 60;
 

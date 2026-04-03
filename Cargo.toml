@@ -1,13 +1,13 @@
 [workspace]
 
 members = [
-    "rustboy-gb",
-    "rustboy-wasm",
-    "rustboy-gui",
+    "crabboy-gb",
+    "crabboy-wasm",
+    "crabboy-gui",
 ]
 #lto = true
 
-[profile.release.package.rustboy-gb]
+[profile.release.package.crabboy-gb]
 #lto="fat"
 #codegen-units = 1
 #panic = "abort"

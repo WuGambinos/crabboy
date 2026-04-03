@@ -1,17 +1,17 @@
-# Rustboy
+# CrabBoy
 Gameboy emulator written in Rust using imgui-rs for GUI
 
 ## Build
 ```bash
-    git clone https://github.com/WuGambinos/rustboy.git
-    cd rustboy
+    git clone https://github.com/WuGambinos/crabboy.git
+    cd crabboy
     cargo build --release
 ```
 
 ## :joystick: Run
 ```bash 
-    cd rustboy
-    cd rustboy-gui
+    cd crabboy
+    cd crabboy-gui
     cargo run --release -- --rom /path/to/rom
 ```
 # Features 

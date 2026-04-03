@@ -1,7 +1,7 @@
-use rustboy::constants::TILE_COLORS;
-use rustboy::interconnect::joypad::Key;
-use rustboy::interconnect::ppu::Rgb;
-use rustboy::{
+use crabboy::constants::TILE_COLORS;
+use crabboy::interconnect::joypad::Key;
+use crabboy::interconnect::ppu::Rgb;
+use crabboy::{
     gameboy::GameBoy,
     interconnect::{
         cartridge::cartridge_info::{ram_size, u8_to_cart_type},

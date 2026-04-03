@@ -12,8 +12,8 @@ use sdl2::{
 use sdl_support::SdlPlatform;
 
 use env_logger::*;
-use rustboy::gameboy::*;
-use rustboy::interconnect::joypad::Key;
+use crabboy::gameboy::*;
+use crabboy::interconnect::joypad::Key;
 
 // Create a new glow context.
 fn glow_context(window: &Window) -> glow::Context {
@@ -52,7 +52,7 @@ fn main() {
     gl_attr.set_context_profile(GLProfile::Core);
 
     let window = video_subsystem
-        .window("Rustboy", WINDOW_WIDTH, WINDOW_HEIGHT)
+        .window("CrabBoy", WINDOW_WIDTH, WINDOW_HEIGHT)
         .allow_highdpi()
         .opengl()
         .position_centered()

@@ -6,9 +6,9 @@ use crate::constants::{
 
 use imgui::{Condition, DrawListMut, ImColor32, Ui};
 use rfd::FileDialog;
-use rustboy::constants::{TILE_COLORS, X_RESOLUTION, Y_RESOLUTION};
-use rustboy::gameboy::GameBoy;
-use rustboy::interconnect::Interconnect;
+use crabboy::constants::{TILE_COLORS, X_RESOLUTION, Y_RESOLUTION};
+use crabboy::gameboy::GameBoy;
+use crabboy::interconnect::Interconnect;
 
 pub fn menu(ui: &mut Ui, picker: &FileDialog, gameboy: &mut GameBoy) {
     if let Some(main) = ui.begin_main_menu_bar() {
