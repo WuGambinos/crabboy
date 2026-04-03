@@ -1,6 +1,5 @@
 use crate::constants::{
-    GB_POS, GB_SCREEN_HEIGHT, GB_SCREEN_SIZE, GB_SCREEN_WIDTH, GB_SCREEN_X, GB_SCREEN_Y, SCALE,
-    TILE_SCALE, TILE_SCREEN_HEIGHT, TILE_SCREEN_WIDTH, WINDOW_HEIGHT, WINDOW_WIDTH,
+    DEBUG_WINDOW_HEIGHT, DEBUG_WINDOW_WIDTH, DEBUG_WINDOW_X, DEBUG_WINDOW_Y, DISPLAY_INFO_HEIGHT, DISPLAY_INFO_WIDTH, DISPLAY_INFO_X, DISPLAY_INFO_Y, GB_POS, GB_SCREEN_HEIGHT, GB_SCREEN_SIZE, GB_SCREEN_WIDTH, GB_SCREEN_X, GB_SCREEN_Y, SCALE, TILE_SCALE, TILE_SCREEN_HEIGHT, TILE_SCREEN_WIDTH, TILE_SCREEN_X, TILE_SCREEN_Y, WINDOW_HEIGHT, WINDOW_WIDTH
 };
 
 use imgui::{Condition, DrawListMut, ImColor32, Ui};
@@ -59,9 +58,9 @@ pub fn memory_viewer(ui: &mut Ui, gameboy: &GameBoy) {
 
 pub fn debug_window(ui: &mut Ui, gameboy: &GameBoy) {
     ui.window("Debug Window")
-        .position([200.0, 500.0], Condition::FirstUseEver)
-        .size([150.0, 200.0], Condition::FirstUseEver)
-        .collapsed(true, Condition::FirstUseEver)
+        .position([DEBUG_WINDOW_X,DEBUG_WINDOW_Y], Condition::FirstUseEver)
+        .size([DEBUG_WINDOW_WIDTH, DEBUG_WINDOW_HEIGHT], Condition::FirstUseEver)
+        .collapsed(false, Condition::FirstUseEver)
         .build(|| {
             let pc = format!("PC: {:#X}", gameboy.cpu.pc);
             let sp = format!("SP: {:#X}", gameboy.cpu.sp);
@@ -91,9 +90,12 @@ pub fn debug_window(ui: &mut Ui, gameboy: &GameBoy) {
 
 pub fn display_info(ui: &mut Ui, gameboy: &GameBoy) {
     ui.window("Info")
-        .size([200.0, 400.0], Condition::FirstUseEver)
-        .position([400.0, 600.0], Condition::FirstUseEver)
-        .collapsed(true, Condition::FirstUseEver)
+        .size(
+            [DISPLAY_INFO_WIDTH, DISPLAY_INFO_HEIGHT],
+            Condition::FirstUseEver,
+        )
+        .position([DISPLAY_INFO_X, DISPLAY_INFO_Y], Condition::FirstUseEver)
+        .collapsed(false, Condition::FirstUseEver)
         .build(|| {
             let title = format!("TITLE: {}", &gameboy.interconnect.cartridge.title);
             let cart_type = format!(
@@ -149,7 +151,7 @@ pub fn draw_tiles(ui: &mut Ui, interconnect: &Interconnect) {
             [TILE_SCREEN_WIDTH as f32, TILE_SCREEN_HEIGHT as f32],
             Condition::FirstUseEver,
         )
-        .position([600.0, 600.0], Condition::FirstUseEver)
+        .position([TILE_SCREEN_X, TILE_SCREEN_Y], Condition::FirstUseEver)
         .collapsed(true, Condition::FirstUseEver)
         .build(|| {
             let draw_list = ui.get_window_draw_list();

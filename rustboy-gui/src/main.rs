@@ -36,20 +36,23 @@ fn keycode_to_key(keycode: sdl2::keyboard::Keycode) -> Option<Key> {
     }
 }
 
+use sdl2::timer::Timer;
+use std::time::{Duration, Instant};
+
+use crate::constants::{WINDOW_HEIGHT, WINDOW_WIDTH};
+
+const TARGET_FPS: u64 = 60;
+const FRAME_DURATION: Duration = Duration::from_micros(1_000_000 / TARGET_FPS);
+
 fn main() {
-    /* initialize SDL and its video subsystem */
     let sdl = sdl2::init().unwrap();
     let video_subsystem = sdl.video().unwrap();
-
-    /* hint SDL to initialize an OpenGL 3.3 core profile context */
     let gl_attr = video_subsystem.gl_attr();
-
     gl_attr.set_context_version(3, 3);
     gl_attr.set_context_profile(GLProfile::Core);
 
-    /* create a new window, be sure to call opengl method on the builder when using glow! */
     let window = video_subsystem
-        .window("Rustboy", 1280, 720)
+        .window("Rustboy", WINDOW_WIDTH, WINDOW_HEIGHT)
         .allow_highdpi()
         .opengl()
         .position_centered()
@@ -57,40 +60,35 @@ fn main() {
         .build()
         .unwrap();
 
-    /* create a new OpenGL context and make it current */
     let gl_context = window.gl_create_context().unwrap();
     window.gl_make_current(&gl_context).unwrap();
 
     /* enable vsync to cap framerate */
     //window.subsystem().gl_set_swap_interval(1).unwrap();
 
-    /* create new glow and imgui contexts */
     let gl = glow_context(&window);
 
-    /* create context */
     let mut imgui = Context::create();
 
-    /* disable creation of files on disc */
+    // disable creation of files on disc
     imgui.set_ini_filename(None);
     imgui.set_log_filename(None);
 
-    /* setup platform and renderer, and fonts to imgui */
     imgui
         .fonts()
         .add_font(&[imgui::FontSource::DefaultFontData { config: None }]);
 
-    /* create platform and renderer */
     let mut platform = SdlPlatform::init(&mut imgui);
     let mut renderer = AutoRenderer::initialize(gl, &mut imgui).unwrap();
 
-    /* start main loop */
+    // start main loop
     let mut event_pump = sdl.event_pump().unwrap();
 
     let mut logger = Builder::from_default_env();
     logger.target(Target::Stdout);
     logger.init();
 
-    // File Dialog
+    // file dialog
     let path = std::env::current_dir().unwrap();
     let file_picker: rfd::FileDialog = rfd::FileDialog::new()
         .add_filter("gameboy", &["gb"])
@@ -98,6 +96,8 @@ fn main() {
         .set_directory(&path);
 
     let mut gameboy = GameBoy::new();
+
+    let mut last_frame = Instant::now();
     'main: loop {
         for event in event_pump.poll_iter() {
             /* pass all events to imgui platfrom */
@@ -135,7 +135,6 @@ fn main() {
         gui::display_emulator(ui, &gameboy);
         gui::debug_window(ui, &gameboy);
 
-
         if gameboy.booted {
             gameboy.cpu.run(&mut gameboy.interconnect);
         }
@@ -147,5 +146,11 @@ fn main() {
         renderer.render(draw_data).unwrap();
 
         window.gl_swap_window();
+
+        let elapsed = last_frame.elapsed();
+        if elapsed < FRAME_DURATION {
+            std::thread::sleep(FRAME_DURATION - elapsed);
+        }
+        last_frame = Instant::now();
     }
 }
