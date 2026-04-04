@@ -17,4 +17,4 @@ glow = "0.13.1"
 imgui-glow-renderer = "0.12.0"
 
 [dependencies.sdl2]
-version = "0.37.0"
+version = "0.38.0"

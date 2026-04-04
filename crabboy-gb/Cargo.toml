@@ -14,10 +14,10 @@ env_logger = "0.10.0"
 clap = { version = "4.3.0", features = ["derive"] }
 modular-bitfield = "0.11.2"
 wasm-bindgen = "0.2.87"
-bincode = "1.3.3"
 serde = {version = "1.0.203",features =["derive"]}
 serde-big-array = "0.5.1"
 yazi = "0.2.0"
+bitcode = {version="0.6.9", features=["std", "serde"]}
 
 [lib]
 name = "crabboy"
