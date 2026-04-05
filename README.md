@@ -12,7 +12,7 @@ Gameboy emulator written in Rust using imgui-rs for GUI
 ```bash 
     cd crabboy
     cd crabboy-gui
-    cargo run --release -- --rom /path/to/rom
+    cargo run --release
 ```
 # Features 
 * Save states
