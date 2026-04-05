@@ -33,19 +33,14 @@ impl GameBoy {
     }
 
     pub fn get_state(&self) -> Vec<u8> {
-        let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
+        let encoded: Vec<u8> = bitcode::serialize(&self).unwrap();
         let compressed = compress(&encoded, Format::Zlib, CompressionLevel::Default).unwrap();
-
-        /*
-        fd.set_file_name("save_file.sav").save_file();
-        let _ = std::fs::write(format!("{}.sav", name), &compressed).unwrap();
-        */
         return compressed;
     }
 
     pub fn load_state(&mut self, compressed_state: Vec<u8>) {
         let (decompressed, checksum) = decompress(&compressed_state, Format::Zlib).unwrap();
-        let decoded: GameBoy = bincode::deserialize(&decompressed[..]).unwrap();
+        let decoded: GameBoy = bitcode::deserialize(&decompressed[..]).unwrap();
         *self = decoded;
     }
 
