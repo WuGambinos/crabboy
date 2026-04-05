@@ -19,7 +19,8 @@ Gameboy emulator written in Rust using imgui-rs for GUI
   
 ## TODO 
 * Audio 
-* GBC 
+* GBC
+
 
 ## Tests
 
@@ -36,3 +37,12 @@ Gameboy emulator written in Rust using imgui-rs for GUI
 | oam_bug           | Failed               |
 | dmg-acid2         | ✅ (1 bug)   |
 | halt_bug          | Failed           |
+
+
+## References
+
+* https://gbdev.io/pandocs/
+* https://gekkio.fi/files/gb-docs/gbctr.pdf
+* https://github.com/retrio/gb-test-roms
+* https://izik1.github.io/gbops/
+* https://www.youtube.com/watch?v=HyzD8pNlpwI
