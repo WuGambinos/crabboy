@@ -4,31 +4,29 @@ use crate::constants::{
     TILE_SCREEN_HEIGHT, TILE_SCREEN_WIDTH, TILE_SCREEN_X, TILE_SCREEN_Y,
 };
 
-use imgui::{Condition, DrawListMut, ImColor32, Ui};
-use rfd::FileDialog;
 use crabboy::constants::{TILE_COLORS, X_RESOLUTION, Y_RESOLUTION};
 use crabboy::gameboy::GameBoy;
 use crabboy::interconnect::Interconnect;
+use imgui::{Condition, DrawListMut, ImColor32, Ui};
+use rfd::FileDialog;
 
 pub fn menu(ui: &mut Ui, picker: &FileDialog, gameboy: &mut GameBoy) {
     if let Some(main) = ui.begin_main_menu_bar() {
         let file_menu = ui.begin_menu("File");
         if let Some(f_menu) = file_menu {
-            let select_rom = ui.menu_item("Open Rom");
+            let mut select_rom = ui.menu_item("Open Rom");
             let save = ui.menu_item("Save State");
             let load = ui.menu_item("Load State");
             let exit = ui.menu_item("Exit");
 
             if select_rom {
-                if !gameboy.booted {
-                    let pick = picker.clone().pick_files();
-                    match pick {
-                        Some(v) => {
-                            let rom_path = v[0].clone().into_os_string().into_string().unwrap();
-                            gameboy.boot(&rom_path, true).unwrap();
-                        }
-                        None => println!("NO ROM SELECTED"),
+                let pick = picker.clone().pick_files();
+                match pick {
+                    Some(v) => {
+                        let rom_path = v[0].clone().into_os_string().into_string().unwrap();
+                        gameboy.boot(&rom_path, true).unwrap();
                     }
+                    None => println!("NO ROM SELECTED"),
                 }
             }
 

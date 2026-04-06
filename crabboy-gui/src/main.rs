@@ -142,6 +142,8 @@ fn main() {
         /* render */
         let draw_data = imgui.render();
 
+        unsafe {renderer.gl_context().clear_color(0.14, 0.15, 0.16, 1.0);}
+
         unsafe { renderer.gl_context().clear(glow::COLOR_BUFFER_BIT) };
         renderer.render(draw_data).unwrap();
 
