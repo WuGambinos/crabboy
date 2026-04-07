@@ -3,7 +3,7 @@ use log::{debug, warn};
 use crate::constants::{DIV, TAC, TIMA, TMA};
 use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
+#[derive(Debug, Copy, Clone, Deserialize, Serialize, PartialEq)]
 pub struct Clock {
     pub period: u32,
     pub n: u32,
@@ -23,7 +23,7 @@ impl Clock {
 }
 
 /// Gameboy Timer
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Timer {
     /// Divider Register - Incremented at rate of 16384Hz, Writing any vlaue to this register
     /// resets it to 0x00

@@ -14,7 +14,7 @@ use crate::cpu::instructions::push_rr;
 use crate::cpu::interrupts::{get_interrupt, InterruptType};
 use crate::interconnect::Interconnect;
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Flags {
     pub data: u8,
 }
@@ -155,7 +155,7 @@ impl Flags {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Registers {
     pub a: u8,
     pub b: u8,
@@ -237,7 +237,7 @@ pub enum RegisterPair {
     SP,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Cpu {
     pub registers: Registers,
     pub sp: u16,

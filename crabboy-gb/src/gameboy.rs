@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 
 use yazi::*;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct GameBoy {
     pub cpu: Cpu,
     pub interconnect: Interconnect,

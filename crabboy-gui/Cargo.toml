@@ -6,15 +6,41 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+console_error_panic_hook = "0.1.7"
 crabboy-gb= {path = "../crabboy-gb"}
-anyhow = "1.0.102"
-log = "0.4.29"
-pretty_env_logger = "0.4.0"
-env_logger = "0.11.10"
-imgui = "0.12.0"
-rfd = {version = "0.17.2", default-features=false, features=["gtk3"]}
-glow = "0.13.1"
-imgui-glow-renderer = "0.12.0"
+# anyhow = "1.0.102"
+# log = "0.4.29"
+# pretty_env_logger = "0.4.0"
+# env_logger = "0.11.10"
+# imgui = "0.12.0"
+# rfd = {version = "0.17.2", default-features=false, features=["gtk3"]}
+# glow = "0.13.1"
+# imgui-glow-renderer = "0.12.0"
+dioxus = {version= "0.7.4", features=["logger"]}
+tracing = "0.1.44"
 
-[dependencies.sdl2]
-version = "0.38.0"
+[features]
+default = ["web"]
+server = ["dioxus/server"]
+web = ["dioxus/web"]
+
+# [dependencies.sdl2]
+# version = "0.38.0"
+[profile.release]
+opt-level = "z"
+debug = false
+lto = true
+codegen-units = 1
+panic = "abort"
+incremental = false
+
+[profile.dev]
+debug = 1
+
+# [profile.dev]
+# opt-level = "z"
+# debug = false
+# lto = true
+# codegen-units = 1
+# panic = "abort"
+# incremental = false

@@ -45,7 +45,7 @@ pub enum LcdMode {
 }
 
 #[bitfield]
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub struct SpriteFlags {
     palette_number_cgb: B3,
     tile_vram_bank: B1,
@@ -55,7 +55,7 @@ pub struct SpriteFlags {
     bg_window: B1,
 }
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub struct SpriteEntry {
     y: u8,
     x: u8,
@@ -74,7 +74,7 @@ impl SpriteEntry {
     }
 }
 
-#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
+#[derive(Debug, Copy, Clone, Deserialize, Serialize, PartialEq)]
 pub struct Dma {
     pub active: bool,
     pub byte: u8,
@@ -94,7 +94,7 @@ impl Dma {
 }
 
 #[bitfield]
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Control {
     bg_window: B1,
     sprite_enable: B1,
@@ -107,7 +107,7 @@ pub struct Control {
 }
 
 #[bitfield]
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Status {
     mode: B2,
     lyc_ly_compare: B1,
@@ -118,7 +118,7 @@ pub struct Status {
     empty: B1,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Ppu {
     #[serde(with = "BigArray")]
     vram: [u8; 0x2000],

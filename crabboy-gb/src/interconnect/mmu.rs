@@ -2,7 +2,7 @@
 use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Mmu {
     #[serde(with = "BigArray")]
     boot: [u8; 0x100],

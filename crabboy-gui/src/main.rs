@@ -1,41 +1,165 @@
-mod constants;
-mod gui;
-mod sdl_support;
-
-use glow::HasContext;
-use imgui::Context;
-use imgui_glow_renderer::AutoRenderer;
-use sdl2::{
-    event::Event,
-    video::{GLProfile, Window},
+use ::dioxus::logger::tracing::{info, Level};
+use ::dioxus::prelude::*;
+use crabboy::constants::BUFFER_SIZE;
+use crabboy::interconnect::ppu::Rgb;
+use crabboy::{
+    gameboy::GameBoy,
+    interconnect::{
+        cartridge::cartridge_info::{ram_size, u8_to_cart_type},
+        cartridge::Cartridge,
+    },
 };
-use sdl_support::SdlPlatform;
 
-use crabboy::gameboy::*;
-use crabboy::interconnect::joypad::Key;
-use env_logger::*;
+static CSS: Asset = asset!("/assets/main.css");
+static GB: GlobalSignal<WebGameBoy> = Signal::global(|| WebGameBoy::new());
 
-// Create a new glow context.
-fn glow_context(window: &Window) -> glow::Context {
-    unsafe {
-        glow::Context::from_loader_function(|s| window.subsystem().gl_get_proc_address(s) as _)
+#[derive(Clone, PartialEq)]
+struct Buffers {
+    prev_buffer: [Rgb; BUFFER_SIZE],
+    current_buffer: [Rgb; BUFFER_SIZE],
+}
+
+impl Buffers {
+    fn new() -> Buffers {
+        Buffers {
+            prev_buffer: [Rgb::new(0, 0, 0); BUFFER_SIZE],
+            current_buffer: [Rgb::new(0, 0, 0); BUFFER_SIZE],
+        }
     }
 }
 
-fn keycode_to_key(keycode: sdl2::keyboard::Keycode) -> Option<Key> {
-    match keycode {
-        sdl2::keyboard::Keycode::Right | sdl2::keyboard::Keycode::D => Some(Key::Right),
-        sdl2::keyboard::Keycode::Left | sdl2::keyboard::Keycode::A => Some(Key::Left),
-        sdl2::keyboard::Keycode::Up | sdl2::keyboard::Keycode::W => Some(Key::Up),
-        sdl2::keyboard::Keycode::Down | sdl2::keyboard::Keycode::S => Some(Key::Down),
-        sdl2::keyboard::Keycode::Z => Some(Key::A),
-        sdl2::keyboard::Keycode::X => Some(Key::B),
-        sdl2::keyboard::Keycode::Space => Some(Key::Select),
-        sdl2::keyboard::Keycode::Return => Some(Key::Start),
-        _ => None,
+#[derive(Clone, PartialEq)]
+pub struct WebGameBoy {
+    booted: bool,
+    gb: GameBoy,
+    prev_buffer: [Rgb; BUFFER_SIZE],
+    current_buffer: [Rgb; BUFFER_SIZE],
+}
+
+impl WebGameBoy {
+    pub fn new() -> WebGameBoy {
+        WebGameBoy {
+            booted: false,
+            gb: GameBoy::new(),
+            prev_buffer: [Rgb::new(0, 0, 0); BUFFER_SIZE],
+            current_buffer: [Rgb::new(0, 0, 0); BUFFER_SIZE],
+        }
+    }
+
+    pub fn run(&mut self) {
+        /*
+        let interconnect = &mut self.gb.interconnect;
+        self.gb.cpu.run(interconnect);
+        */
+    }
+
+    pub fn boot(&mut self, rom: &[u8]) {
+        info!("BOOTING");
+        self.booted = true;
+        let game_rom = rom.to_vec();
+
+        let cart_type_value = game_rom[0x147];
+        let rom_size_value = game_rom[0x148];
+        let ram_size_value = game_rom[0x149];
+        let cart_type = u8_to_cart_type(cart_type_value);
+        let ram = vec![0x00; ram_size(ram_size_value) as usize];
+
+        self.gb.interconnect.cartridge = Cartridge::new(&game_rom, &ram, &cart_type);
+        self.gb.cpu.pc = 0x100;
     }
 }
 
+fn main() {
+    dioxus::logger::init(Level::INFO).expect("failed to init logger");
+    ::dioxus::launch(App);
+}
+
+#[component]
+pub fn FilePick() -> Element {
+    rsx! {
+        input {
+            r#type: "file",
+            accept: ".gb, .gbc",
+            multiple: false,
+            onchange: move |evt| {
+                async move {
+                    for file in evt.files() {
+                        if let Ok(bytes) = file.read_bytes().await {
+                            info!("BOOTING ROM");
+                            GB.write().boot(bytes.iter().as_slice());
+                        }
+                    }
+                }
+            },
+        
+        }
+    }
+}
+
+fn Start() {
+    info!("STARTING: PC: {:#X}", GB.read().gb.cpu.pc);
+    GB.write().run();
+}
+
+extern crate console_error_panic_hook;
+use std::panic;
+
+#[allow(non_snake_case)]
+#[component]
+pub fn App() -> Element {
+
+    panic::set_hook(Box::new(console_error_panic_hook::hook));
+    rsx! {
+        document::Stylesheet { href: CSS }
+
+        body {
+            button {
+                id: "load",
+                onclick: move |event| {
+
+                    info!("Clicked Load ROM");
+                    Start();
+                },
+                "Load Rom"
+            
+            }
+            h1 { "YO" }
+            h1 { "CrabBoy" }
+            p {
+                "Booted: {GB.read().gb.booted}"
+                "PC: {GB.read().gb.cpu.pc}"
+            }
+            div { class: "flex-container",
+                div { class: "flex-child",
+                    canvas {
+                        id: "canvas",
+                        width: "640",
+                        height: "600",
+                        style: "border:1px solid",
+                    }
+                }
+
+                div { class: "flex-child",
+                    p { "Hello World" }
+
+                    div {
+                        FilePick {}
+
+                        button { id: "reset", "Reset" }
+                    }
+                    div { id: "fps" }
+                
+                }
+            }
+        }
+    }
+}
+
+/*
+}
+*/
+
+/*
 use sdl2::timer::Timer;
 use std::time::{Duration, Instant};
 
@@ -156,3 +280,4 @@ fn main() {
         last_frame = Instant::now();
     }
 }
+*/

@@ -25,7 +25,7 @@ pub fn key_to_u8(key: &Key) -> u8 {
 }
 
 #[bitfield]
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub struct Joypad {
     buttons: B4,
     directions: B4,

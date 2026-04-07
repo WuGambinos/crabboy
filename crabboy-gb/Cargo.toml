@@ -22,3 +22,14 @@ bitcode = {version="0.6.9", features=["std", "serde"]}
 [lib]
 name = "crabboy"
 path = "src/lib.rs"
+
+[profile.dev]
+debug = "line-tables-only"
+lto = true
+
+[profile.dev.package."*"]
+debug = false
+
+[profile.debugging]
+inherits = "dev"
+debug = true

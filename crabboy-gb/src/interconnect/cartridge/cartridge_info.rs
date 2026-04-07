@@ -31,7 +31,7 @@ pub fn ram_size(value: u8) -> usize {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub enum CartridgeType {
     ROMOnly,
     MBC1,

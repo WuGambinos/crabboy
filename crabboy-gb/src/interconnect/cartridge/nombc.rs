@@ -1,6 +1,6 @@
 use serde::{Serialize,Deserialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct NoMbcState {
     pub rom: Vec<u8>,
 }

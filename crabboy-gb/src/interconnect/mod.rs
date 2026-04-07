@@ -26,7 +26,7 @@ use self::joypad::Key;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct Interconnect {
     pub cartridge: Cartridge,
     pub mmu: Mmu,
