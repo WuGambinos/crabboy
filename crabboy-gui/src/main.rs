@@ -1,9 +1,8 @@
 mod constants;
 mod gui;
 mod sdl_support;
-
 use glow::HasContext;
-use imgui::Context;
+use imgui::{Condition, Context};
 use imgui_glow_renderer::AutoRenderer;
 use sdl2::{
     event::Event,
@@ -11,9 +10,9 @@ use sdl2::{
 };
 use sdl_support::SdlPlatform;
 
-use env_logger::*;
 use crabboy::gameboy::*;
 use crabboy::interconnect::joypad::Key;
+use env_logger::*;
 
 // Create a new glow context.
 fn glow_context(window: &Window) -> glow::Context {
@@ -129,6 +128,16 @@ fn main() {
         platform.prepare_frame(&mut imgui, &window, &event_pump);
 
         let ui = imgui.new_frame();
+        let framerate = ui.io().framerate;
+
+        ui.window("FPS")
+            .size([200.0, 200.0], Condition::FirstUseEver)
+            .position([0.0, 0.0], Condition::FirstUseEver)
+            .collapsed(false, Condition::FirstUseEver)
+            .build(|| {
+                ui.text(format!("FPS: {}", framerate));
+            });
+
         gui::menu(ui, &file_picker, &mut gameboy);
         gui::display_info(ui, &gameboy);
         gui::draw_tiles(ui, &gameboy.interconnect);
