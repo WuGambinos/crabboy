@@ -1,94 +1,60 @@
-mod constants;
-mod gui;
-mod sdl_support;
+//! Example showing the same functionality as
+//! `imgui-examples/examples/custom_textures.rs`
+//!
+//! Not that the texture uses the internal format `glow::SRGB`, so that
+//! OpenGL automatically converts colors to linear space before the shaders.
+//! The renderer assumes you set this internal format correctly like this.
+
+use std::{io::Cursor, num::NonZeroU32, time::Instant};
 
 use glow::HasContext;
-use imgui::Context;
-use imgui_glow_renderer::AutoRenderer;
-use sdl2::{
-    event::Event,
-    video::{GLProfile, Window},
-};
-use sdl_support::SdlPlatform;
+use glutin::surface::GlSurface;
+use imgui::{Condition, DrawListMut, ImColor32, Ui};
+
+use imgui_glow_renderer::Renderer;
+use winit::event::{ElementState, KeyEvent, WindowEvent};
+use winit::event_loop::ControlFlow;
+use winit::keyboard::{Key, KeyCode, PhysicalKey};
 
 use crabboy::gameboy::*;
-use crabboy::interconnect::joypad::Key;
-use env_logger::*;
+use crabboy::interconnect::*;
 
-// Create a new glow context.
-fn glow_context(window: &Window) -> glow::Context {
-    unsafe {
-        glow::Context::from_loader_function(|s| window.subsystem().gl_get_proc_address(s) as _)
-    }
-}
+use crabboy::constants::{TILE_COLORS, X_RESOLUTION, Y_RESOLUTION};
+#[allow(dead_code)]
+mod utils;
 
-fn keycode_to_key(keycode: sdl2::keyboard::Keycode) -> Option<Key> {
+mod constants;
+mod gui;
+
+fn keycode_to_key(keycode: KeyCode) -> Option<joypad::Key> {
     match keycode {
-        sdl2::keyboard::Keycode::Right | sdl2::keyboard::Keycode::D => Some(Key::Right),
-        sdl2::keyboard::Keycode::Left | sdl2::keyboard::Keycode::A => Some(Key::Left),
-        sdl2::keyboard::Keycode::Up | sdl2::keyboard::Keycode::W => Some(Key::Up),
-        sdl2::keyboard::Keycode::Down | sdl2::keyboard::Keycode::S => Some(Key::Down),
-        sdl2::keyboard::Keycode::Z => Some(Key::A),
-        sdl2::keyboard::Keycode::X => Some(Key::B),
-        sdl2::keyboard::Keycode::Space => Some(Key::Select),
-        sdl2::keyboard::Keycode::Return => Some(Key::Start),
+        KeyCode::ArrowRight | KeyCode::KeyD => Some(joypad::Key::Right),
+        KeyCode::ArrowLeft | KeyCode::KeyA => Some(joypad::Key::Left),
+        KeyCode::ArrowUp | KeyCode::KeyW => Some(joypad::Key::Up),
+        KeyCode::ArrowDown | KeyCode::KeyS => Some(joypad::Key::Down),
+        KeyCode::KeyZ => Some(joypad::Key::A),
+        KeyCode::KeyX => Some(joypad::Key::B),
+        KeyCode::Space => Some(joypad::Key::Select),
+        KeyCode::Enter => Some(joypad::Key::Start),
         _ => None,
     }
 }
 
-use sdl2::timer::Timer;
-use std::time::{Duration, Instant};
-
-use crate::constants::{WINDOW_HEIGHT, WINDOW_WIDTH};
-
-const TARGET_FPS: u64 = 60;
-const FRAME_DURATION: Duration = Duration::from_micros(1_000_000 / TARGET_FPS);
-
 fn main() {
-    let sdl = sdl2::init().unwrap();
-    let video_subsystem = sdl.video().unwrap();
-    let gl_attr = video_subsystem.gl_attr();
-    gl_attr.set_context_version(3, 3);
-    gl_attr.set_context_profile(GLProfile::Core);
+    let (event_loop, window, surface, context) = utils::create_window("Custom textures", None);
+    let (mut winit_platform, mut imgui_context) = utils::imgui_init(&window);
+    let gl = utils::glow_context(&context);
+    // This time, we tell OpenGL this is an sRGB framebuffer and OpenGL will
+    // do the conversion to sSGB space for us after the fragment shader.
+    //unsafe { gl.enable(glow::FRAMEBUFFER_SRGB) };
 
-    let window = video_subsystem
-        .window("CrabBoy", WINDOW_WIDTH, WINDOW_HEIGHT)
-        .allow_highdpi()
-        .opengl()
-        .position_centered()
-        .resizable()
-        .build()
-        .unwrap();
+    let mut textures = imgui::Textures::<glow::Texture>::default();
+    // Note that `output_srgb` is `false`. This is because we set
+    // `glow::FRAMEBUFFER_SRGB` so we don't have to manually do the conversion
+    // in the shader.
+    let mut ig_renderer = Renderer::new(&gl, &mut imgui_context, &mut textures, false)
+        .expect("failed to create renderer");
 
-    let gl_context = window.gl_create_context().unwrap();
-    window.gl_make_current(&gl_context).unwrap();
-
-    /* enable vsync to cap framerate */
-    //window.subsystem().gl_set_swap_interval(1).unwrap();
-
-    let gl: glow::Context = glow_context(&window);
-
-    let mut imgui = Context::create();
-
-    // disable creation of files on disc
-    imgui.set_ini_filename(None);
-    imgui.set_log_filename(None);
-
-    imgui
-        .fonts()
-        .add_font(&[imgui::FontSource::DefaultFontData { config: None }]);
-
-    let mut platform = SdlPlatform::init(&mut imgui);
-    let mut renderer = AutoRenderer::initialize(gl, &mut imgui).expect("failed to create renderer");
-
-    // start main loop
-    let mut event_pump = sdl.event_pump().unwrap();
-
-    let mut logger = Builder::from_default_env();
-    logger.target(Target::Stdout);
-    logger.init();
-
-    // file dialog
     let path = std::env::current_dir().unwrap();
     let file_picker: rfd::FileDialog = rfd::FileDialog::new()
         .add_filter("gameboy", &["gb"])
@@ -96,63 +62,214 @@ fn main() {
         .set_directory(&path);
 
     let mut gameboy = GameBoy::new();
+    let mut textures_ui = TexturesUi::new(&gl, &mut gameboy, &mut textures);
 
     let mut last_frame = Instant::now();
-    'main: loop {
-        for event in event_pump.poll_iter() {
-            /* pass all events to imgui platfrom */
-            platform.handle_event(&mut imgui, &event);
+    #[allow(deprecated)]
+    event_loop
+        .run(move |event, window_target| {
+            // Note we can potentially make the loop more efficient by
+            // changing the `Poll` (default) value to `ControlFlow::Wait`
+            // but be careful to test on all target platforms!
+            window_target.set_control_flow(ControlFlow::Poll);
 
             match event {
-                Event::Quit { .. } => break 'main,
-                Event::KeyUp { keycode, .. } => {
-                    if let Some(key) = keycode.and_then(keycode_to_key) {
-                        gameboy.interconnect.key_up(key)
+                winit::event::Event::WindowEvent {
+                    event:
+                        winit::event::WindowEvent::KeyboardInput {
+                            event:
+                                KeyEvent {
+                                    physical_key: actual_key,
+                                    state: ElementState::Pressed,
+                                    ..
+                                },
+                            ..
+                        },
+                    ..
+                } => match actual_key {
+                    PhysicalKey::Code(code) => {
+                        if let Some(k) = keycode_to_key(code) {
+                            gameboy.interconnect.joypad.key_down(k);
+                        }
                     }
+                    _ => (),
+                },
+
+                winit::event::Event::WindowEvent {
+                    event:
+                        winit::event::WindowEvent::KeyboardInput {
+                            event:
+                                KeyEvent {
+                                    physical_key: actual_key,
+                                    state: ElementState::Released,
+                                    ..
+                                },
+                            ..
+                        },
+                    ..
+                } => match actual_key {
+                    PhysicalKey::Code(code) => {
+                        if let Some(k) = keycode_to_key(code) {
+                            gameboy.interconnect.joypad.key_up(k);
+                        }
+                    }
+                    _ => (),
+                },
+
+                winit::event::Event::NewEvents(_) => {
+                    let now = Instant::now();
+                    imgui_context
+                        .io_mut()
+                        .update_delta_time(now.duration_since(last_frame));
+                    last_frame = now;
                 }
 
-                Event::KeyDown { keycode, .. } => {
-                    if let Some(key) = keycode.and_then(keycode_to_key) {
-                        gameboy.interconnect.key_down(key)
+                winit::event::Event::AboutToWait => {
+                    if gameboy.booted {
+                        gameboy.cpu.run(&mut gameboy.interconnect);
                     }
+                    winit_platform
+                        .prepare_frame(imgui_context.io_mut(), &window)
+                        .unwrap();
+
+                    window.request_redraw();
                 }
 
-                _ => {}
+                winit::event::Event::WindowEvent {
+                    event: winit::event::WindowEvent::RedrawRequested,
+                    ..
+                } => {
+                    unsafe { gl.clear(glow::COLOR_BUFFER_BIT) };
+
+                    let ui = imgui_context.frame();
+                    textures_ui.generated_texture =
+                        TexturesUi::generate(&gl, &mut gameboy, &mut textures);
+                    textures_ui.show(ui);
+                    gui::menu(ui, &file_picker, &mut gameboy);
+                    /*
+                    gui::display_emulator(ui, &gameboy);
+                    */
+
+                    winit_platform.prepare_render(ui, &window);
+                    let draw_data = imgui_context.render();
+                    ig_renderer
+                        .render(&gl, &textures, draw_data)
+                        .expect("error rendering imgui");
+
+                    surface
+                        .swap_buffers(&context)
+                        .expect("Failed to swap buffers");
+                }
+
+                winit::event::Event::WindowEvent {
+                    event: winit::event::WindowEvent::Resized(new_size),
+                    ..
+                } => {
+                    if new_size.width > 0 && new_size.height > 0 {
+                        surface.resize(
+                            &context,
+                            NonZeroU32::new(new_size.width).unwrap(),
+                            NonZeroU32::new(new_size.height).unwrap(),
+                        );
+                    }
+                    winit_platform.handle_event(imgui_context.io_mut(), &window, &event);
+                }
+
+                winit::event::Event::WindowEvent {
+                    event: winit::event::WindowEvent::CloseRequested,
+                    ..
+                } => {
+                    window_target.exit();
+                }
+
+                winit::event::Event::LoopExiting => {
+                    ig_renderer.destroy(&gl);
+                }
+
+                event => {
+                    winit_platform.handle_event(imgui_context.io_mut(), &window, &event);
+                }
             }
+        })
+        .expect("EventLoop error");
+}
 
-            if let Event::Quit { .. } = event {
-                break 'main;
+struct TexturesUi {
+    generated_texture: imgui::TextureId,
+}
+
+impl TexturesUi {
+    fn new(
+        gl: &glow::Context,
+        gameboy: &mut GameBoy,
+        textures: &mut imgui::Textures<glow::Texture>,
+    ) -> Self {
+        Self {
+            generated_texture: Self::generate(gl, gameboy, textures),
+        }
+    }
+
+    /// Generate dummy texture
+    fn generate(
+        gl: &glow::Context,
+        gameboy: &mut GameBoy,
+        textures: &mut imgui::Textures<glow::Texture>,
+    ) -> imgui::TextureId {
+        let mut data =
+            Vec::with_capacity((Y_RESOLUTION as usize * X_RESOLUTION as usize * 3).into());
+        let video_buffer = gameboy.interconnect.ppu.video_buffer;
+
+        for line_num in 0..Y_RESOLUTION {
+            for x in 0..X_RESOLUTION {
+                let index =
+                    (u32::from(x) + (u32::from(line_num) * u32::from(X_RESOLUTION))) as usize;
+                let color = video_buffer[index];
+                let (r, g, b) = color.get_rgb();
+                data.push(r);
+                data.push(g);
+                data.push(b);
             }
         }
 
-        /* call prepare_frame before calling imgui.new_frame() */
-        platform.prepare_frame(&mut imgui, &window, &event_pump);
+        let gl_texture = unsafe { gl.create_texture() }.expect("unable to create GL texture");
 
-        let ui = imgui.new_frame();
-        gui::menu(ui, &file_picker, &mut gameboy);
-        gui::display_info(ui, &gameboy);
-        gui::draw_tiles(ui, &gameboy.interconnect);
-        gui::display_emulator(ui, &gameboy);
-        gui::debug_window(ui, &gameboy);
-
-        if gameboy.booted {
-            gameboy.cpu.run(&mut gameboy.interconnect);
+        unsafe {
+            gl.bind_texture(glow::TEXTURE_2D, Some(gl_texture));
+            gl.tex_parameter_i32(
+                glow::TEXTURE_2D,
+                glow::TEXTURE_MIN_FILTER,
+                glow::LINEAR as _,
+            );
+            gl.tex_parameter_i32(
+                glow::TEXTURE_2D,
+                glow::TEXTURE_MAG_FILTER,
+                glow::LINEAR as _,
+            );
+            gl.tex_image_2d(
+                glow::TEXTURE_2D,
+                0,
+                glow::RGB as _, // When generating a texture like this, you're probably working in linear color space
+                X_RESOLUTION as _,
+                Y_RESOLUTION as _,
+                0,
+                glow::RGB,
+                glow::UNSIGNED_BYTE,
+                Some(&data),
+            )
         }
 
-        /* render */
-        let draw_data = imgui.render();
+        textures.insert(gl_texture)
+    }
 
-        unsafe {renderer.gl_context().clear_color(0.14, 0.15, 0.16, 1.0);}
+    fn show(&self, ui: &imgui::Ui) {
+        ui.window("Hello textures")
+            .size([400.0, 400.0], Condition::FirstUseEver)
+            .build(|| {
+                ui.text("Hello textures!");
+                ui.text("Some generated texture");
+                imgui::Image::new(self.generated_texture, [300.0, 300.0]).build(ui);
 
-        unsafe { renderer.gl_context().clear(glow::COLOR_BUFFER_BIT) };
-        renderer.render(draw_data).unwrap();
-
-        window.gl_swap_window();
-
-        let elapsed = last_frame.elapsed();
-        if elapsed < FRAME_DURATION {
-            std::thread::sleep(FRAME_DURATION - elapsed);
-        }
-        last_frame = Instant::now();
+                ui.text("Say hello to Peppers");
+            });
     }
 }

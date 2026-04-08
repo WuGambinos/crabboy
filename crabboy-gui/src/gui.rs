@@ -64,6 +64,7 @@ pub fn menu(ui: &mut Ui, picker: &FileDialog, gameboy: &mut GameBoy) {
     }
 }
 
+/*
 pub fn memory_viewer(ui: &mut Ui, gameboy: &GameBoy) {
     let rom_size = 0xFFFF;
 
@@ -132,6 +133,7 @@ pub fn display_info(ui: &mut Ui, gameboy: &GameBoy) {
             ui.text(cart_type);
         });
 }
+*/
 
 pub fn display_emulator(ui: &mut Ui, gameboy: &GameBoy) {
     ui.window("Gameboy Emualtor")
@@ -170,6 +172,8 @@ pub fn display_emulator(ui: &mut Ui, gameboy: &GameBoy) {
         });
 }
 
+
+/*
 pub fn draw_tiles(ui: &mut Ui, interconnect: &Interconnect) {
     ui.window("TILES")
         .size(
@@ -267,3 +271,4 @@ fn display_tile(
         }
     }
 }
+*/

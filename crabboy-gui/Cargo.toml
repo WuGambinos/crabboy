@@ -13,8 +13,14 @@ pretty_env_logger = "0.4.0"
 env_logger = "0.11.10"
 imgui = "0.12.0"
 rfd = {version = "0.17.2", default-features=false, features=["gtk3"]}
-glow = "0.13.1"
-imgui-glow-renderer = "0.12.0"
+
+glow = "0.14"
+imgui-glow-renderer = "0.13.0"
+winit = {version = "0.30", features = ["rwh_06"]}
+imgui-winit-support = "0.13.0"
+glutin = "0.32"
+raw-window-handle = "0.6.0"
+glutin-winit = "0.5.0"
 
 [dependencies.sdl2]
 version = "0.38.0"
