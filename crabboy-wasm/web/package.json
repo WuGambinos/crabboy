@@ -1,0 +1,15 @@
+{
+  "name": "crabboy-wasm",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "crabboy_wasm_bg.wasm",
+    "crabboy_wasm.js",
+    "crabboy_wasm.d.ts"
+  ],
+  "main": "crabboy_wasm.js",
+  "types": "crabboy_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
