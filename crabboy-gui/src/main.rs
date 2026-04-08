@@ -142,9 +142,24 @@ fn main() {
                     unsafe { gl.clear(glow::COLOR_BUFFER_BIT) };
 
                     let ui = imgui_context.frame();
+                    let framerate = ui.io().framerate;
+
                     textures_ui.generated_texture =
                         TexturesUi::generate(&gl, &mut gameboy, &mut textures);
+
                     textures_ui.show(ui);
+
+                    ui.window("FPS")
+                        .size(
+                            [200.0, 200.0],
+                            Condition::FirstUseEver,
+                        )
+                        .position([0.0, 0.0], Condition::FirstUseEver)
+                        .collapsed(false, Condition::FirstUseEver)
+                        .build(|| {
+                            ui.text(format!("FPS:{}", framerate));
+                        });
+
                     gui::menu(ui, &file_picker, &mut gameboy);
                     /*
                     gui::display_emulator(ui, &gameboy);
