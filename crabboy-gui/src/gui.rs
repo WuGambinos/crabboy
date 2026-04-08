@@ -33,11 +33,17 @@ pub fn menu(ui: &mut Ui, picker: &FileDialog, gameboy: &mut GameBoy) {
             }
 
             if load {
-                let pick = picker.clone().pick_files().unwrap();
-                let state_path = pick[0].clone().into_os_string().into_string().unwrap();
-                let data: Vec<u8> = std::fs::read(state_path).unwrap();
-                gameboy.load_state(data);
-                gameboy.booted = true;
+                let pick = picker.clone().pick_files();
+                match pick {
+                    Some(v) => {
+                        let state_path = v[0].clone().into_os_string().into_string().unwrap();
+                        let data: Vec<u8> = std::fs::read(state_path).unwrap();
+                        gameboy.load_state(data);
+                        gameboy.booted = true;
+                    }
+                    None => println!("NO ROM SELECTED"),
+                }
+
             }
 
             if save {
