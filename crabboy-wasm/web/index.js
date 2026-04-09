@@ -109,6 +109,32 @@ async function startWasm() {
 
         let gb = new WebGameBoy();
         gb.boot(contents);
+        let debug = gb.debug_info();
+        let display_info = gb.display_info();
+        console.log(debug);
+        console.log(display_info);
+
+        const ul = document.createElement("ul");
+        document.getElementById("debug_container").appendChild(ul);
+
+        /*
+        debug.forEach(item => {
+            const li = document.createElement("div");
+            li.textContent = "0x" + item.toString(16).toUpperCase();
+            ul.appendChild(li);
+        });
+        */
+
+        let title = document.createElement("div");
+        title.textContent = "TITLE: "+ inputElement.value;
+        ul.appendChild(title);
+
+        display_info.forEach(item => {
+            const li = document.createElement("div");
+            li.textContent = item;
+            ul.appendChild(li);
+        });
+
         game_loop();
 
         function game_loop() {

@@ -8,20 +8,59 @@
     </head>
     <body>
         <script src="crabboy-wasm/web/bootstrap.js"></script>
-        <h1>Emuboy</h1>
-        <div class="flex-container">
-            <div class="flex-child">
+        <h1>CrabBoy</h1>
+        <div class="wrapper">
+            <div class="flex-container">
+                <div class="flex-child">
 
-                <canvas id="canvas" width="640" height="600" style="border:1px solid"></canvas>
-            </div>
-            <div class="flex-child"> 
-                <p> Hello World </p>
-                <div>
-                    <input type="file" id="fileInput" accept=".gb,.gbc"/>
-                    <button id="load">Load Rom</button>
-                    <button id="reset">Reset</button>
+                    <canvas id="canvas" width="640" height="576" style="border:1px solid"></canvas>
                 </div>
-                <div id="fps"></div>
+                <div class="flex-child"> 
+                    <div>
+                        <input type="file" id="fileInput" accept=".gb,.gbc"/>
+                        <button id="load">Load Rom</button>
+                        <button id="reset">Reset</button>
+                    </div>
+                    <div id="fps"></div>
+                    <table style="width:25%">
+                        <tr>
+                            <th>CONTROLS</th>
+                        </tr>
+
+                        <tr>
+                            <th> Console </th>
+                            <th> Keyboard </th>
+                        </tr>
+
+                        <tr>
+                            <td>Start</td>
+                            <td>q</td>
+                        </tr>
+
+                        <tr>
+                            <td>Select</td>
+                            <td>Space</td>
+                        </tr>
+
+                        <tr>
+                            <td>A</td>
+                            <td>x</td>
+                        </tr>
+
+                        <tr>
+                            <td>B</td>
+                            <td>z</td>
+                        </tr>
+                        
+                        <tr>
+                            <td>Left/Up/Down/Right</td>
+                            <td>W/A/S/D</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="flex-container2" id="debug_container">
             </div>
         </div>
     </body>

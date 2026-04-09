@@ -22,6 +22,8 @@ export class WebGameBoy {
     free(): void;
     [Symbol.dispose](): void;
     boot(rom: Uint8Array): void;
+    debug_info(): Uint16Array;
+    display_info(): string[];
     draw(): void;
     constructor();
     on_button_down(value: number): void;
@@ -45,6 +47,8 @@ export interface InitOutput {
     readonly button_value_to_joypad_key: (a: number) => number;
     readonly js_value_to_joypad_key: (a: any) => number;
     readonly webgameboy_boot: (a: number, b: number, c: number) => void;
+    readonly webgameboy_debug_info: (a: number) => [number, number];
+    readonly webgameboy_display_info: (a: number) => [number, number];
     readonly webgameboy_draw: (a: number) => void;
     readonly webgameboy_new: () => number;
     readonly webgameboy_on_button_down: (a: number, b: number) => void;
@@ -60,6 +64,8 @@ export interface InitOutput {
     readonly __externref_table_alloc: () => number;
     readonly __wbindgen_externrefs: WebAssembly.Table;
     readonly __wbindgen_exn_store: (a: number) => void;
+    readonly __wbindgen_free: (a: number, b: number, c: number) => void;
+    readonly __externref_drop_slice: (a: number, b: number) => void;
     readonly __wbindgen_start: () => void;
 }
 

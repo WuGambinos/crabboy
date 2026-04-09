@@ -13,18 +13,25 @@ body {
 canvas {
     color-scheme: light only;
     text-align: center;
-    border-radius: 50px;
 }
-
 
 button {
     background-color: #565f89;
     border: none;
     color: #FFFFFF;
     width: 10%;
-    height: 25px;
+    min-width: 80px;        /* Prevents it from getting too small */
+    max-width: 200px;       /* Prevents it from getting too large */
+    height: 2.5vh;          /* Scales with viewport height */
+    min-height: 25px;       /* Ensures a usable minimum height */
+    padding: 0.4em 1em;     /* Em-based padding scales with font size */
     border-radius: 25px;
+    font-size: clamp(0.75rem, 1.5vw, 1rem);  /* Fluid font scaling */
     margin-bottom: 10px;
+}
+
+table {
+    border: 1px solid black;
 }
 
 #fps {
@@ -32,10 +39,28 @@ button {
     font-family: monospace;
 }
 
+.wrapper {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    width: 100%;
+    outline: 2px solid red;
+}
+
 .flex-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 1;
+    outline: 1px solid blue;
+}
+
+.flex-container2 {
     display: flex;
     flex-direction: row;
     justify-content: center;
+    flex: 1;
+    outline: 2px solid green;
 }
 
 .flex-child {
@@ -43,3 +68,4 @@ button {
     justify-content: center;
     align-items: center;
 }
+

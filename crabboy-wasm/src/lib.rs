@@ -83,6 +83,33 @@ impl WebGameBoy {
         }
     }
 
+    pub fn debug_info(&self) -> Vec<u16> {
+        let mut res = Vec::new();
+
+        res.push(self.gb.cpu.registers.a.into());
+        res.push(self.gb.cpu.registers.b.into());
+        res.push(self.gb.cpu.registers.c.into());
+        res.push(self.gb.cpu.registers.d.into());
+        res.push(self.gb.cpu.registers.e.into());
+        res.push(self.gb.cpu.registers.h.into());
+        res.push(self.gb.cpu.registers.l.into());
+        res.push(self.gb.cpu.pc);
+        res.push(self.gb.cpu.sp);
+
+        return res;
+    }
+
+    pub fn display_info(&self) -> Vec<String> {
+        let mut res = Vec::new();
+        let cart_type = format!(
+            "CART TYPE: {:?}",
+            self.gb.interconnect.cartridge.cartridge_type
+        );
+        res.push(cart_type);
+
+        return res;
+    }
+
     pub fn reset(&mut self) {
         self.gb = GameBoy::new();
         self.prev_buffer = [Rgb::new(0, 0, 0); BUFFER_SIZE];
