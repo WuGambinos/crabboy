@@ -14,8 +14,15 @@ Gameboy emulator written in Rust using imgui-rs for GUI
     cd crabboy-gui
     cargo run --release
 ```
-# Features 
+## Features 
 * Save states
+
+## Screenshots
+![dr_mario](screenshots/dr_mario.png)
+![pokemon](screenshots/pokemon_red.png)
+![zelda](screenshots/links_awakening.png)
+![gui](screenshots/full_gui.png)
+
   
 ## TODO 
 * Audio 
