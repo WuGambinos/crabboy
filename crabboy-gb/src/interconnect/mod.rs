@@ -8,10 +8,12 @@ pub mod ppu;
 mod serial;
 
 use log::debug;
+use log::info;
 use log::warn;
 
 use crate::constants::{
-    BOOT, EXTERNAL_RAM, HIGH_RAM, INTERRUPT_ENABLE, IO, LCD, OAM, ROM_BANK, TIMER, VRAM, WORK_RAM,
+    BCPD, BCPS, BOOT, EXTERNAL_RAM, HIGH_RAM, INTERRUPT_ENABLE, IO, LCD, OAM, ROM_BANK, TIMER,
+    VRAM, WORK_RAM,
 };
 use crate::cpu::interrupts::request_interrupt;
 use crate::cpu::interrupts::InterruptType;
@@ -19,6 +21,7 @@ use crate::cpu::timer::Timer;
 use crate::interconnect::joypad::Joypad;
 use crate::interconnect::mmu::Mmu;
 use crate::interconnect::ppu::Ppu;
+use crate::interconnect::ppu::{CgbBgPaletteData, CgbBgPaletteSpec};
 use crate::interconnect::serial::SerialOutput;
 
 use self::cartridge::Cartridge;
@@ -90,11 +93,6 @@ impl Interconnect {
 
     pub fn write_mem(&mut self, addr: u16, value: u8) {
         if ROM_BANK.contains(&addr) {
-            /*
-            if self.write_enabled {
-                self.mmu.write_rom_bank(addr, value);
-            }
-            */
             self.cartridge.mbc.write(addr, value);
         } else if VRAM.contains(&addr) {
             self.ppu.write_vram(addr, value);
@@ -109,15 +107,25 @@ impl Interconnect {
             self.ppu.write_oam(addr, value);
         } else if TIMER.contains(&addr) {
             self.timer.timer_write(addr, value);
-        } else if LCD.contains(&addr) {
-            self.ppu.write_lcd(addr, value);
         } else if IO.contains(&addr) {
-            if addr == 0xFF00 {
+            if addr == BCPS {
+                log::info!("WRITE MEM CGB BG COLOR SPEC");
+                self.ppu.cgb_bg_color_spec = CgbBgPaletteSpec::from_bytes([value]);
+            } else if addr == BCPD {
+                log::info!("WRITE MEM CGB BG COLOR DATA");
+                self.ppu.cgb_bg_color_data = CgbBgPaletteData::from_bytes([0, value]);
+            } else if (addr >= 0xFF51 && addr <= 0xFF70) {
+                log::info!("WRITE IO: {:#X}", addr);
+                std::process::exit(0);
+            } else if addr == 0xFF00 {
                 self.joypad.write(value);
+            } else if LCD.contains(&addr) {
+                self.ppu.write_lcd(addr, value);
             } else {
                 self.mmu.write_io(addr - 0xFF00, value);
             }
         } else if HIGH_RAM.contains(&addr) {
+            //log::info!("HIGH RAM: {:#X}", addr);
             self.mmu.write_hram(addr - 0xFF80, value);
         } else if addr == INTERRUPT_ENABLE {
             self.mmu.enable_interrupt(value);
@@ -145,11 +153,20 @@ impl Interconnect {
             }
         } else if TIMER.contains(&addr) {
             self.timer.timer_read(addr)
-        } else if LCD.contains(&addr) {
-            self.ppu.read_lcd(addr)
         } else if IO.contains(&addr) {
-            if addr == 0xFF00 {
+            if addr == 0xFF68 {
+                log::info!("READ MEM CGB BG COLOR SPEC");
+                self.ppu.cgb_bg_color_spec.into_bytes()[0]
+            } else if addr == 0xFF69 {
+                log::info!("READ MEM CGB BG COLOR DATA");
+                self.ppu.cgb_bg_color_data.into_bytes()[0]
+            } else if (addr >= 0xFF51 && addr <= 0xFF70) {
+                log::info!("READ IO: {:#X}", addr);
+                std::process::exit(0);
+            } else if addr == 0xFF00 {
                 self.joypad.read()
+            } else if LCD.contains(&addr) {
+                self.ppu.read_lcd(addr)
             } else {
                 self.mmu.read_io(addr - 0xFF00)
             }

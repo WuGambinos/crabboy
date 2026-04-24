@@ -35,6 +35,9 @@ pub const LCDC: u16 = 0xFF40;
 pub const INTERRUPT_FLAG: u16 = 0xFF0F;
 pub const INTERRUPT_ENABLE: u16 = 0xFFFF;
 
+pub const BCPS: u16 = 0xFF68;
+pub const BCPD: u16 = 0xFF69;
+
 pub const INTERRUPTS: [InterruptType; 5] = [
     InterruptType::VBlank,
     InterruptType::LcdStat,
