@@ -37,6 +37,8 @@ pub const INTERRUPT_ENABLE: u16 = 0xFFFF;
 
 pub const BCPS: u16 = 0xFF68;
 pub const BCPD: u16 = 0xFF69;
+pub const OCPS: u16 = 0xFF6A;
+pub const OCPD: u16 = 0xFF6B;
 
 pub const INTERRUPTS: [InterruptType; 5] = [
     InterruptType::VBlank,
@@ -57,6 +59,36 @@ pub const TIMER: Range<u16> = 0xFF04..0xFF08;
 pub const LCD: Range<u16> = 0xFF40..0xFF4C;
 pub const IO: Range<u16> = 0xFF00..0xFF80;
 pub const HIGH_RAM: Range<u16> = 0xFF80..0xFFFF;
+
+pub const BOOT_START: u16 = 0x000;
+pub const BOOT_END: u16 = 0x100;
+
+pub const ROM_BANK_START: u16 = 0x0000;
+pub const ROM_BANK_END: u16 = 0x8000;
+
+pub const VRAM_START: u16 = 0x8000;
+pub const VRAM_END: u16 = 0xA000;
+
+pub const EXTERNAL_RAM_START: u16 = 0xA000;
+pub const EXTERNAL_RAM_END: u16 = 0xC000;
+
+pub const WORK_RAM_START: u16 = 0xC000;
+pub const WORK_RAM_END: u16 = 0xE000;
+
+pub const OAM_START: u16 = 0xFE00;
+pub const OAM_END: u16 = 0xFEA0;
+
+pub const TIMER_START: u16 = 0xFF04;
+pub const TIMER_END: u16 = 0xFF08;
+
+pub const IO_START: u16 = 0xFF00;
+pub const IO_END: u16 = 0xFF80;
+
+pub const HIGH_RAM_START: u16 = 0xFF80;
+pub const HIGH_RAM_END: u16 = 0xFFFF;
+
+pub const LCD_START: u16 = 0xFF40;
+pub const LCD_END: u16 = 0xFF4C;
 
 pub const ROM_BANK_SIZE: usize = 0x4000;
 pub const RAM_BANK_SIZE: usize = 0x2000;

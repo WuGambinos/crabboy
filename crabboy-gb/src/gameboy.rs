@@ -59,10 +59,12 @@ impl GameBoy {
         let game_rom: Vec<u8> = read_file(game_rom_path)?;
 
         let cgb_flag = game_rom[0x143];
-        if (cgb_flag == 0x80) {
+        if cgb_flag == 0x80 {
             warn!("CGB BACKWARDS COMPATIBLE(NOT IMPLEMENTED)");
-        } else if(cgb_flag == 0xC2){
+            self.interconnect.cgb_mode = true;
+        } else if cgb_flag == 0xC2 {
             warn!("CGB ONLY (NOT IMPLEMENTED)");
+            self.interconnect.cgb_mode = false;
         }
 
         let cart_type_value: u8 = game_rom[0x147];

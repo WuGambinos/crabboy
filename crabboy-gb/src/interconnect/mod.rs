@@ -1,6 +1,5 @@
 #![allow(clippy::must_use_candidate)]
 
-pub mod apu;
 pub mod cartridge;
 pub mod joypad;
 mod mmu;
@@ -8,21 +7,22 @@ pub mod ppu;
 mod serial;
 
 use log::debug;
-use log::info;
 use log::warn;
 
 use crate::constants::{
-    BCPD, BCPS, BOOT, EXTERNAL_RAM, HIGH_RAM, INTERRUPT_ENABLE, IO, LCD, OAM, ROM_BANK, TIMER,
-    VRAM, WORK_RAM,
+    BCPD, BCPS, BOOT, BOOT_END, BOOT_START, EXTERNAL_RAM, EXTERNAL_RAM_END, EXTERNAL_RAM_START,
+    HIGH_RAM, HIGH_RAM_END, HIGH_RAM_START, INTERRUPT_ENABLE, IO, IO_END, IO_START, LCD, LCD_END,
+    LCD_START, OAM, OAM_END, OAM_START, RAM_BANK_SIZE, ROM_BANK, ROM_BANK_END, ROM_BANK_SIZE,
+    ROM_BANK_START, TIMER, TIMER_END, TIMER_START, VRAM, VRAM_END, VRAM_START, WORK_RAM,
+    WORK_RAM_END, WORK_RAM_START, OCPS, OCPD,
 };
 use crate::cpu::interrupts::request_interrupt;
 use crate::cpu::interrupts::InterruptType;
 use crate::cpu::timer::Timer;
 use crate::interconnect::joypad::Joypad;
 use crate::interconnect::mmu::Mmu;
-use crate::interconnect::ppu::Ppu;
-use crate::interconnect::ppu::{CgbBgPaletteData, CgbBgPaletteSpec};
 use crate::interconnect::serial::SerialOutput;
+use crate::interconnect::ppu::{PaletteSpec, Rgb, Ppu};
 
 use self::cartridge::Cartridge;
 use self::joypad::Key;
@@ -40,6 +40,7 @@ pub struct Interconnect {
     pub boot_active: bool,
     pub write_enabled: bool,
     pub ticks: u64,
+    pub cgb_mode: bool,
 }
 
 impl Interconnect {
@@ -54,6 +55,7 @@ impl Interconnect {
             boot_active: true,
             write_enabled: true,
             ticks: 0,
+            cgb_mode: false,
         }
     }
 
@@ -92,49 +94,125 @@ impl Interconnect {
     }
 
     pub fn write_mem(&mut self, addr: u16, value: u8) {
-        if ROM_BANK.contains(&addr) {
-            self.cartridge.mbc.write(addr, value);
-        } else if VRAM.contains(&addr) {
-            self.ppu.write_vram(addr, value);
-        } else if EXTERNAL_RAM.contains(&addr) {
-            self.cartridge.mbc.write(addr, value);
-        } else if WORK_RAM.contains(&addr) {
-            self.mmu.write_work_ram(addr - 0xC000, value);
-        } else if OAM.contains(&addr) {
-            if self.ppu.dma_transferring() {
-                return;
+        match addr {
+            ROM_BANK_START..ROM_BANK_END => self.cartridge.mbc.write(addr, value),
+            VRAM_START..VRAM_END => self.ppu.write_vram(addr, value),
+            EXTERNAL_RAM_START..EXTERNAL_RAM_END => self.cartridge.mbc.write(addr, value),
+            WORK_RAM_START..WORK_RAM_END => self.mmu.write_work_ram(addr - 0xC000, value),
+
+            OAM_START..OAM_END => {
+                if self.ppu.dma_transferring() {
+                    return;
+                }
+                self.ppu.write_oam(addr, value);
             }
-            self.ppu.write_oam(addr, value);
-        } else if TIMER.contains(&addr) {
-            self.timer.timer_write(addr, value);
-        } else if IO.contains(&addr) {
-            if addr == BCPS {
-                log::info!("WRITE MEM CGB BG COLOR SPEC");
-                self.ppu.cgb_bg_color_spec = CgbBgPaletteSpec::from_bytes([value]);
-            } else if addr == BCPD {
-                log::info!("WRITE MEM CGB BG COLOR DATA");
-                self.ppu.cgb_bg_color_data = CgbBgPaletteData::from_bytes([0, value]);
-            } else if (addr >= 0xFF51 && addr <= 0xFF70) {
-                log::info!("WRITE IO: {:#X}", addr);
-                std::process::exit(0);
-            } else if addr == 0xFF00 {
-                self.joypad.write(value);
-            } else if LCD.contains(&addr) {
-                self.ppu.write_lcd(addr, value);
-            } else {
-                self.mmu.write_io(addr - 0xFF00, value);
-            }
-        } else if HIGH_RAM.contains(&addr) {
-            //log::info!("HIGH RAM: {:#X}", addr);
-            self.mmu.write_hram(addr - 0xFF80, value);
-        } else if addr == INTERRUPT_ENABLE {
-            self.mmu.enable_interrupt(value);
-        } else {
-            warn!("UNREACHABLE Addr: {:#X}", addr);
+
+            TIMER_START..TIMER_END => self.timer.timer_write(addr, value),
+            IO_START..IO_END => match addr {
+                a if self.cgb_mode && a == BCPS => {
+                    log::info!("WRITE MEM CGB BG COLOR SPEC");
+                    self.ppu.bg_colors[self.ppu.bcps.addr() as usize] = Rgb::new(0, 0, 0);
+                    if  self.ppu.bcps.auto_increment() == 1 {
+                        self.ppu.bcps.set_addr(self.ppu.bcps.addr() + 1);
+                    }
+                }
+
+                a if self.cgb_mode && a == BCPD => {
+                    log::info!("WRITE MEM CGB BG COLOR DATA");
+                    self.ppu.bg_colors[self.ppu.bcps.addr() as usize] = Rgb::new(0, 0, 0);
+                }
+
+                a if self.cgb_mode && a == OCPS => {
+                    log::info!("WRITE MEM CGB BG COLOR SPEC");
+                    self.ppu.ocps = PaletteSpec::from_bytes([value]);
+                }
+
+                a if self.cgb_mode && a == OCPD => {
+                    log::info!("WRITE MEM CGB BG COLOR DATA");
+                    self.ppu.sprite_colors[self.ppu.ocps.addr() as usize] = Rgb::new(1, 0, 0);
+                    if  self.ppu.ocps.auto_increment() == 1 {
+                        self.ppu.ocps.set_addr(self.ppu.ocps.addr() + 1);
+                    }
+                }
+
+                0xFFF0 => self.joypad.write(value),
+                LCD_START..LCD_END => self.ppu.write_lcd(addr, value),
+
+                /*
+                0xFF51..0xFF70 => {
+                    log::info!("WRITE IO: {:#X}", addr);
+                    std::process::exit(0);
+                }
+                */
+                _ => self.mmu.write_io(addr - 0xFF00, value),
+            },
+
+            HIGH_RAM_START..HIGH_RAM_END => self.mmu.write_hram(addr - 0xFF80, value),
+            INTERRUPT_ENABLE => self.mmu.enable_interrupt(value),
+            _ => panic!("NOT A VALID WRITE ADDRESS"),
         }
     }
 
     pub fn read_mem(&self, addr: u16) -> u8 {
+        match addr {
+            a if self.boot_active && BOOT.contains(&a) => self.mmu.read_boot(a),
+            ROM_BANK_START..ROM_BANK_END => self.cartridge.mbc.read(addr),
+            VRAM_START..VRAM_END => self.ppu.read_vram(addr),
+            EXTERNAL_RAM_START..EXTERNAL_RAM_END => self.cartridge.mbc.read(addr),
+            WORK_RAM_START..WORK_RAM_END => self.mmu.read_work_ram(addr - 0xC000),
+
+            OAM_START..OAM_END => {
+                if self.ppu.dma_transferring() {
+                    return 0xFF;
+                }
+
+                self.ppu.read_oam(addr)
+            }
+
+            TIMER_START..TIMER_END => self.timer.timer_read(addr),
+            IO_START..IO_END => match addr {
+                a if self.cgb_mode && a == BCPS => {
+                    //log::info!("READ MEM CGB BCPS");
+                    self.ppu.bcps.into_bytes()[0]
+                }
+
+                a if self.cgb_mode && a == BCPD => {
+                    log::info!("READ MEM CGB BCPD");
+                    std::process::exit(0);
+                    0
+                }
+
+                a if self.cgb_mode && a == OCPS => {
+                    //log::info!("READ MEM CGB OCPS");
+                    self.ppu.ocps.into_bytes()[0]
+                }
+
+                a if self.cgb_mode && a == OCPD => {
+                    log::info!("READ MEM CGB OCPD");
+                    std::process::exit(0);
+                    0
+                }
+
+                0xFFF0 => self.joypad.read(),
+                LCD_START..LCD_END => self.ppu.read_lcd(addr),
+
+                /*
+                0xFF51..0xFF70 => {
+                    log::info!("READ IO: {:#X}", addr);
+                    std::process::exit(0);
+                }
+                */
+                _ => self.mmu.read_io(addr - 0xFF00),
+            },
+
+            HIGH_RAM_START..HIGH_RAM_END => self.mmu.read_hram(addr - 0xFF80),
+            INTERRUPT_ENABLE => self.mmu.read_interrupt_enable(),
+            _ => {
+                warn!("NOT REACHABLE ADDR: {:#X}", addr);
+                0
+            }
+        }
+        /*
         if self.boot_active && BOOT.contains(&addr) {
             self.mmu.read_boot(addr)
         } else if ROM_BANK.contains(&addr) {
@@ -178,6 +256,7 @@ impl Interconnect {
             warn!("NOT REACHABLE ADDR: {:#X}", addr);
             0
         }
+        */
     }
 
     pub fn load_game_rom(&mut self, rom: &[u8]) {

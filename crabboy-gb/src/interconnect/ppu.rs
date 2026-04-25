@@ -120,19 +120,10 @@ pub struct Status {
 
 #[bitfield]
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub struct CgbBgPaletteSpec {
-    auto_increment: B1,
+pub struct PaletteSpec {
+    pub auto_increment: B1,
     empty: B1,
-    addr: B6,
-}
-
-#[bitfield]
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub struct CgbBgPaletteData {
-    red: B5,
-    green: B5,
-    blue: B5,
-    empty: B1,
+    pub addr: B6,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -183,10 +174,13 @@ pub struct Ppu {
     pub sprite1_palette_data: u8,
 
     // CGB MODE
-    pub cgb_bg_colours: Rgb,
+    pub bcps: PaletteSpec,
+    pub ocps: PaletteSpec,
 
-    pub cgb_bg_color_spec: CgbBgPaletteSpec,
-    pub cgb_bg_color_data: CgbBgPaletteData,
+    pub bg_colors: [Rgb; 4],
+    pub sprite_colors: [Rgb; 4],
+
+    pub cgb_bg_colours: Rgb,
 
     #[serde(with = "BigArray")]
     pub bg_priority: [bool; X_RESOLUTION as usize],
@@ -221,10 +215,12 @@ impl Ppu {
             sprite1_palette_data: 0,
             bg_priority: [false; X_RESOLUTION as usize],
 
-            cgb_bg_color_spec: CgbBgPaletteSpec::new(),
-            cgb_bg_color_data: CgbBgPaletteData::new(),
-
             cgb_bg_colours: Rgb::new(0, 0, 0),
+            bcps: PaletteSpec::new(),
+            ocps: PaletteSpec::new(),
+
+            bg_colors: [Rgb::new(0, 0,0); 4],
+            sprite_colors: [Rgb::new(0, 0,0);4],
         };
 
         ppu.set_stat_mode(LcdMode::Oam);
